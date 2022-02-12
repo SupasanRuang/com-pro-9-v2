@@ -46,15 +46,21 @@ void number_table_order(int); void loop_order(vector<table_order> &table);
 void start();   void select_table();
 void select_checkbill();
 
-void push_menubook(vector<menubook> &book);                     void printmenubook(vector<menubook> &book);
-void addorder(vector<table_order> &note , int id, int num);
-int find_id(vector<menubook> book ,int id);                     int find_name(vector<menubook> book ,string name);
+void push_menubook(vector<menubook> &book);                     
+void printmenubook(vector<menubook> &book);
+void vec_addorder(vector<table_order> &note , int id, int num);
+void add_table_order(vector<table_order> &thetable);
+bool vec_cancelorder(vector<table_order> &note ,int id,int num);
+void cancel_table_order(vector<table_order> &thetable);
+int find_id(vector<menubook> book ,int id);  
+int find_id_in_order (vector<table_order> thetable ,int id);                   
+int find_name(vector<menubook> book ,string name);
 void add_date(vector<daily_income> daily,string date ,int income);
 void show_bill(vector<table_order> &note ,vector<menubook> book);
 int check_bill(vector<table_order> &note ,vector<menubook> book);
-bool cancelorder(vector<table_order> &note ,int id);
 void show_table_order(vector<table_order> thetable,vector<menubook> book);
 vector<table_order>* which_table(int number);
+void update_menubook(vector<menubook> &book);
 void table_bill();
 string datenow();
 
@@ -74,10 +80,9 @@ int main()
     push_menubook(book);
     cout<<"printmenubook\n";  
     printmenubook(book) ;
-    select_table();
-    table_bill();
-    unsigned int k=table9.size();
-    cout<<k<<endl;
+    start();
+    //select_table();
+    //table_bill();
     sqlite3_close(db);// Close the connection
     return (0); 
 } 
@@ -87,9 +92,14 @@ void start(){
     bool done = true;
     
     while(done){
-        cout << "--START--";
-        cout << "1.Select table ( press 1 )\n" << "2.Check bill ( press 2 )\n" << "3.Edit menu ( press 3 )\n" << "4.Check daily balance ( press 4 )\n";
-        cout << "5.Exit ( press 5 )\n";
+        cout << "--START--"<<endl;
+        cout << "1.Select table ( press 1 )\n" ;
+        cout<< "2.Order Menu ( press 2 )\n" ;
+        cout<< "3.Check bill ( press 3 )\n" ;
+        cout<< "4.Edit menu ( press 4 )\n";
+        cout<< "5.Check daily balance ( press 5 )\n";
+        cout << "6.Exit ( press 6 )\n";
+        cout<<"Input Your choice : ";
         cin >> select;
 
         switch (select)
@@ -98,19 +108,29 @@ void start(){
                 select_table();
                 break;
             case 2:
-                select_checkbill();
+                number_table_order(0);
                 break;
             case 3:
-                edit_menu();
+                table_bill();
                 break;
             case 4:
-            
+                cout<<"4. None"<<endl;
+                //edit_menu();
                 break;
             case 5:
+                cout<<"5. None"<<endl;
+                //
+                break; 
+            case 6:
                 done = false;
-                break;    
+                cout<<"---------------------------------------------------------\n";
+                cout<< "Ending Program"<<endl;
+                cout<<"---------------------------------------------------------\n";
+                break;
             default:
-
+                cout<<"---------------------------------------------------------\n";
+                cout<< "Error Select again"<<endl;
+                cout<<"---------------------------------------------------------\n";
                 break;
         }
         
@@ -121,6 +141,7 @@ void start(){
 void select_table(){
     
     int sl_table,count=0;
+    cout<<"---------------------------------------------------------\n";
     for(int j=0 ; j<9;j++){
         cout << table[j] << " ";
         if(table[j]=='-')
@@ -131,7 +152,9 @@ void select_table(){
     cout << endl;
     if(count==9)
     {
+        cout<<"---------------------------------------------------------\n";
         cout<<"Sorry all table are used.\nPlease wait it empty." << endl;
+        cout<<"---------------------------------------------------------\n";
         return;
     }
     while(true)
@@ -146,13 +169,16 @@ void select_table(){
             continue;
         }
         
-        if(table[sl_table]!='-')
+        if(table[sl_table-1]!='-')
         {
            break; 
         }
         else 
         {
-            cout<<"Sorry this table are used. Please select table again." << endl;
+            cout<<"---------------------------------------------------------\n";
+            cout<<"Sorry this table is used. Please select table again." << endl;
+            cout<<"---------------------------------------------------------\n";
+            continue;
         }
     }
     table[sl_table-1] = '-';
@@ -176,35 +202,38 @@ void select_checkbill(){
 }
 
 void loop_order(vector<table_order> &thetable){
-    allmenu();
-    int id,num;
-    while(true){
-        
-        cout << "Input order menu ID (If want to exit input 0) : ";
-        cin >> id;
-        if(id == 0) break;
-        int x=find_id(book,id);
-        //cout<<x<<endl;
-        if(x==-1)
-        {
-            cout<<"---------------------------------------------------------\n";
-            cout<<"Don't have this ID\n";
-            cout<<"---------------------------------------------------------\n";
-            continue;
-        }
-        cout << "Input quantity order : ";
+    int num;
+    while (true)
+    {
+        cout<<"---------------------------------------------------------\n";
+        cout<< "Select these choice \n[1] Add Order \n[2] Cancel Order \n[3] Exit "<<endl;
+        cout<<"Input Your choice : ";
         cin >> num;
-        if(num>0)
+        cout<<"---------------------------------------------------------\n";
+        switch (num)
         {
-            addorder(thetable,id,num);
-            show_table_order(thetable,book);
+            case 1 :
+                cout<<"[1] Add Order Process"<<endl;
+                add_table_order(thetable);
+                break;
+
+            case 2 :
+                cout<<"[2] Cancel Order Process"<<endl;
+                cancel_table_order(thetable);
+                break;
+
+            case 3 :
+                cout<<"[3] Exit Order Food Process"<<endl;
+                return ;
+                break;
+    
+            default:
+                cout<< "Error Select again"<<endl;
+                cout<<"---------------------------------------------------------\n";
+                break;
         }
-        else 
-        {
-            cout << "Input quantity order Error \n";
-            cout<<"---------------------------------------------------------\n";
-        }       
     }
+    return ;
 }
 
 void show_table_order(vector<table_order> thetable,vector<menubook> book)
@@ -221,16 +250,70 @@ void show_table_order(vector<table_order> thetable,vector<menubook> book)
     cout<<"---------------------------------------------------------\n";
 }
 
-
-void number_table_order(int tb_num){
+void number_table_order(int tb_num=0){
+    int sl_table,count=0;
+    if(tb_num==0)
+    {
+        cout<<"---------------------------------------------------------\n";
+        for(int j=0 ; j<9;j++)
+        {
+            cout << table[j] << " ";
+            if(table[j]!='-')
+            {
+            count++;
+            }
+        }
+        cout << endl;
+        if(count==9)
+        {
+            cout<<"---------------------------------------------------------\n";
+            cout<<"Sorry all table are used.\nPlease wait it empty." << endl;
+            cout<<"---------------------------------------------------------\n";
+            return;
+        }
+        while(true)
+        {
+            cout << "input table want to Order Menu : ";
+            cin >> sl_table;
+            if (sl_table<1||sl_table>9)
+            {
+                cout<<"---------------------------------------------------------\n";
+                cout<<"Don't have this table\n";
+                cout<<"---------------------------------------------------------\n";
+                continue;
+            }
+        
+            if(table[sl_table-1]=='-')
+            {
+               break; 
+            }
+            else 
+            {
+                cout<<"---------------------------------------------------------\n";
+                cout<<"Sorry this table is empty. Please select table again." << endl;
+                cout<<"---------------------------------------------------------\n";
+                continue;
+            }
+        }
+    }
+    else
+    {
+        sl_table=tb_num;
+    }
     vector<table_order>* vec_point;
-    vec_point=which_table(tb_num);
+    vec_point=which_table(sl_table);
     if(vec_point==NULL)
     {
+        cout<<"---------------------------------------------------------\n";
+        cout<<"Error table" << endl;
+        cout<<"---------------------------------------------------------\n";
+
         return;
     }
     loop_order(*vec_point);
+    return;
 }
+
 vector<table_order>* which_table(int number)
 {
     switch (number)
@@ -387,8 +470,124 @@ void checkbill(){
     sqlite3_prepare( db, "SELECT * FROM menu;", -1, &stmt, NULL );//preparing the statement
 }
 
-void addorder(vector<table_order> &note , int id, int num)
+void add_table_order(vector<table_order> &thetable)
 {
+    allmenu();
+    int id,num,want;
+    while(true){
+        cout << "Input order menu ID to add (If want to exit input 0) : ";
+        cin >> id;
+        if(id == 0) break;
+        int x=find_id(book,id);
+        //cout<<x<<endl;
+        if(x==-1)
+        {
+            cout<<"---------------------------------------------------------\n";
+            cout<<"Don't have this ID in Menubook\n";
+            cout<<"---------------------------------------------------------\n";
+            continue;
+        }
+        cout << "Input quantity order to add : ";
+        cin >> num;
+        if(num>0)
+        {
+            vec_addorder(thetable,id,num);
+            show_table_order(thetable,book);
+        }
+        else 
+        {
+            cout << "Input quantity order Error \n";
+            cout<<"---------------------------------------------------------\n";
+        }       
+    }
+    return ;
+
+}
+
+void cancel_table_order(vector<table_order> &thetable )
+{
+    int id,num,quantity;
+    if(thetable.size()==0)
+    {
+        cout<<"---------------------------------------------------------\n";
+        cout<<"The Order is empty"<<endl;
+        cout<<"---------------------------------------------------------\n";
+        return;
+    }
+    show_table_order(thetable,book);
+    while(true){
+        bool done=true;
+        cout << "Input order menu ID to cancel(If want to exit input 0) : ";
+        cin >> id;
+        if(id == 0) 
+        {
+        break;
+        }
+        int x = find_id_in_order (thetable,id);
+        //cout<<x<<endl;
+        if(x==-1)
+        {
+            cout<<"---------------------------------------------------------\n";
+            cout<<"Don't have this ID in Order\n";
+            cout<<"---------------------------------------------------------\n";
+            continue;
+        }
+        else if(thetable[x].order==0)
+        {
+
+            cout<<"---------------------------------------------------------\n";
+            cout<<"Don't have this ID in Order\n";
+            cout<<"---------------------------------------------------------\n";
+            continue;
+        }
+
+        quantity = thetable[x].order;
+        cout << "Input quantity order to cancel "<<"[ 1 ~ "<<quantity<<" ] : ";
+        cin >> num;
+        if(num<=quantity&&quantity!=0&&num>0)
+        {
+            done=vec_cancelorder(thetable,id,num);
+            show_table_order(thetable,book);
+        }
+        else 
+        {
+            cout << "Input quantity order Error \n";
+            cout<<"---------------------------------------------------------\n";
+        }
+        if(done==false)
+        {
+            cout<<"---------------------------------------------------------\n";
+            cout << "Cancelorder order Error \n";
+            cout<<"---------------------------------------------------------\n";
+        } 
+
+    }
+    return ;
+}
+
+bool vec_cancelorder(vector<table_order> &note ,int id,int num)
+{
+    bool having=true;
+
+    for(unsigned int i=0 ;i<note.size();i++)
+    {
+        if(note[i].food_id==id)
+        {
+            note[i].order-=num;
+            if(note[i].order==0)
+            {
+               note.erase(note.begin()+i); 
+            }
+            return true;
+        }
+    }
+    return false;
+
+}
+
+void vec_addorder(vector<table_order> &note , int id, int num)
+{
+    
     bool having=true;
     for(unsigned int i=0 ;i<note.size();i++)
     {
@@ -405,6 +604,20 @@ void addorder(vector<table_order> &note , int id, int num)
         note.push_back(temp);
     }
 }
+
+int find_id_in_order (vector<table_order> thetable ,int id)
+{
+    for(unsigned int i=0 ;i<thetable.size();i++)
+    {
+        if(thetable[i].food_id==id)
+        {
+            return i;    
+        }
+    }
+    return -1;
+
+}
+
 
 int find_id(vector<menubook> book ,int id)
 {
@@ -488,8 +701,6 @@ int check_bill (vector<table_order> &note ,vector<menubook> book)
     return sum;
 }
 
-
-
 void table_bill()
 {
     int number ,count=0 ;
@@ -510,10 +721,13 @@ void table_bill()
     }
     while(true)
     {
-        cout << "input table want to check bill : ";
+        cout << "input table want to check bill (If want to exit input 0): ";
         cin >> number ;
-        cout<<table[number-1]<<endl;
-        if(table[number-1]!='-')
+        if(number==0)
+        {  
+            return;
+        }
+        else if(table[number-1]!='-')
         {
            cout<<"Sorry this table are empty. Please select table again." << endl; 
         }
@@ -525,24 +739,21 @@ void table_bill()
     vec_point = which_table(number);
     show_bill(*vec_point,book);
     int money=check_bill(*vec_point,book);
-
+    table[number-1]=(number+48);
     (*vec_point).clear();
+
 
 }
 
 
-bool cancelorder(vector<table_order> &note ,int id)
+
+void update_menubook(vector<menubook> &book)
 {
-    bool having=true;
-    for(unsigned int i=0 ;i<note.size();i++)
-    {
-        if(note[i].food_id==id)
-        {
-            note.erase(note.begin()+i);
-            return true;
-        }
-    }
-    return false;
+    book.clear();
+    push_menubook(book);
+    cout<<"Menubook is update"<<endl;
+    printmenubook(book);
+    return;
 
 }
 
