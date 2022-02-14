@@ -38,7 +38,8 @@ vector<daily_income> daily;
 vector<menubook> book;
 
 //prototype
-void allmenu();     void showmenu(int);    void addmenu();     void deletemenu();      void edit_menu();
+void allmenu();     void showmenu(int);    void addmenu();     void deletemenu();      
+void edit_menu();
 int callback(void *NotUsed, int argc, char **argv, char **azColName);
 
 void number_table_order(int); void loop_order(vector<table_order> &table);
@@ -55,13 +56,16 @@ void cancel_table_order(vector<table_order> &thetable);
 int find_id(vector<menubook> book ,int id);  
 int find_id_in_order (vector<table_order> thetable ,int id);                   
 int find_name(vector<menubook> book ,string name);
-void add_date(vector<daily_income> daily,string date ,int income);
+void add_daily_income(vector<daily_income> &daily,int income);
 void show_bill(vector<table_order> &note ,vector<menubook> book);
 int check_bill(vector<table_order> &note ,vector<menubook> book);
 void show_table_order(vector<table_order> thetable,vector<menubook> book);
 vector<table_order>* which_table(int number);
 void update_menubook(vector<menubook> &book);
-void table_bill();
+void table_bill(vector<daily_income> &daily);
+void print_daily_income(vector<daily_income> daily);
+void push_daily_income(vector<daily_income> &daily);
+void pull_daily_income(vector<daily_income> &daily);
 string datenow();
 
 int main() 
@@ -111,15 +115,14 @@ void start(){
                 number_table_order(0);
                 break;
             case 3:
-                table_bill();
+                table_bill(daily);
                 break;
             case 4:
-                cout<<"4. None"<<endl;
-                //edit_menu();
+                cout<<"4.Edit menu"<<endl;
+                edit_menu();
                 break;
             case 5:
-                cout<<"5. None"<<endl;
-                //
+                print_daily_income( daily);
                 break; 
             case 6:
                 done = false;
@@ -435,12 +438,41 @@ void deletemenu(){
 
 void edit_menu(){
     int select;
-    cout << "what you want to edit\n"<<"1.Add menu ( press 1 )\n"<<"2.Delete menu ( press 2 )\n"<<"3.Go back ( press 3 )\n"<<"Input your choice : ";
-    cin >> select;
+    bool done=true;
+    while(done){
+        cout << "what you want to edit\n";
+        cout <<"1.Add menu in Database( press 1 )\n";
+        cout<<"2.Delete menu in Database( press 2 )\n";
+        cout<<"3.Update menu int Menubook( press 3 )\n";
+        cout<<"4.Show menu in Database( press 4 )\n";
+        cout<<"5.Go back ( press 5 )\n";
+        cout<<"Input your choice : ";
+        cin >> select;
 
-    if(select == 1) addmenu();
-    if(select == 2) deletemenu();
-    if(select == 3) ;
+        switch (select)
+            {
+                case 1:
+                    addmenu();
+                    break;
+                case 2:
+                    deletemenu();
+                    break;
+                case 3:
+                    allmenu();
+                    break;
+                case 4:
+                    update_menubook(book);
+                    break;
+                case 5:
+                    done = false;
+                    break;
+                default:
+                    cout<<"---------------------------------------------------------\n";
+                    cout<< "Error Select again"<<endl;
+                    cout<<"---------------------------------------------------------\n";
+                    break;
+            }
+    }
 
 }
 
@@ -656,8 +688,9 @@ string datenow()
 
 }
 
-void add_date(vector<daily_income> daily,string date ,int income)
-{ 
+void add_daily_income(vector<daily_income> &daily,int income)
+{   
+     string date = datenow();
     for(unsigned int i=0 ;i<daily.size();i++)
     {
         if(daily[i].date==date)
@@ -674,7 +707,7 @@ void show_bill(vector<table_order> &note ,vector<menubook> book)
 {
     double sum=0;
 
-    cout <<"---------------------------------------------------------\n\n";
+    cout <<"---------------------------------------------------------\n";
     cout <<setw(10)<<right<<"Food ID"<<"\t"<<setw(15)<<left <<"Food Name"<<setw(10)<<right<<"Price";
     cout <<setw(10)<<right<<"Quantity"<<setw(10)<<right<<"Total"<<endl;
     for(unsigned int i=0 ;i<note.size();i++)
@@ -701,7 +734,7 @@ int check_bill (vector<table_order> &note ,vector<menubook> book)
     return sum;
 }
 
-void table_bill()
+void table_bill(vector<daily_income> &daily)
 {
     int number ,count=0 ;
     vector<table_order> *vec_point; 
@@ -739,22 +772,142 @@ void table_bill()
     vec_point = which_table(number);
     show_bill(*vec_point,book);
     int money=check_bill(*vec_point,book);
+    add_daily_income(daily,money);
     table[number-1]=(number+48);
     (*vec_point).clear();
 
 
 }
 
+void print_daily_income(vector<daily_income> daily)
+{
+    cout<<"---------------------------------------------------------\n";
+    cout <<setw(15)<<right<<"Date"<<"\t"<<setw(10)<<right<<"income"<<endl;
+    for(unsigned int i=0;i<daily.size();i++)
+    {
+        cout<<setw(15)<<right<<daily[i].date<<"\t"<<setw(10)<<right<<daily[i].income<<endl;
+    }
+    cout<<"---------------------------------------------------------\n";
+    return ;
 
+}
+
+void pull_daily_income(vector<daily_income> &daily)
+{
+    
+
+
+}
+
+void push_daily_income(vector<daily_income> &daily)
+{
+        sqlite3_stmt * stmt;
+    //menu --------> daily income
+    sqlite3_prepare( db, "SELECT * FROM menu;", -1, &stmt, NULL );
+    const unsigned char* text;
+    daily_income tempdaily;
+    int num;
+    bool done = false;
+    while (!done) {
+        switch (sqlite3_step(stmt)) {
+            case SQLITE_ROW:
+                for(int i=0; i<2;i++){
+                    if(i==0)
+                    {
+                        basic_string<unsigned char> temp = sqlite3_column_text(stmt, i);
+                        string text( temp.begin(), temp.end() );
+                        tempdaily.date=text;
+                        daily.push_back(tempdaily);
+                    }
+                    else if(i==1)
+                    {
+                        num= sqlite3_column_int(stmt,i);
+                        daily[daily.size()-1].income =num;
+                    }
+                }
+                break;
+            
+            case SQLITE_DONE:
+                done = true;
+                cout<<"Push Daily Income Successfully!"<<endl;
+                break;
+
+            default:
+                fprintf(stderr, "Failed.\n");
+                return;
+        }
+        
+    }
+
+    sqlite3_finalize(stmt);
+
+}
+
+void all_daily_income(){
+
+    sqlite3_stmt * stmt;
+    //menu --------> daily income
+    sqlite3_prepare( db, "SELECT * FROM menu;", -1, &stmt, NULL );//preparing the statement
+
+    const unsigned char* text;
+    bool done = false;
+    cout<<"---------------------------------------------------------\n";
+    cout <<setw(15)<<right<<"Date"<<"\t"<<setw(10)<<right<<"income"<<endl;
+    while (!done) {
+        switch (sqlite3_step(stmt)) {
+            case SQLITE_ROW:
+            for(int i=0; i<2;i++){
+                text = sqlite3_column_text(stmt, i);
+                if(i==1)
+                {
+                    cout <<"\t"<<setw(10)<<right; 
+                } 
+                else cout<<setw(15)<<right;
+                cout <<text ;
+            }
+                break;
+            
+            case SQLITE_DONE:
+                done = true;
+                break;
+
+            default:
+                fprintf(stderr, "Failed.\n");
+                return;
+        }
+        cout << endl;
+    }
+    cout<<"---------------------------------------------------------\n";
+
+    sqlite3_finalize(stmt);
+
+}
 
 void update_menubook(vector<menubook> &book)
 {
+    bool no_empty= false;
+    for (int i = 0; i < 9; i++)
+    {
+        if(table[i]=='-')
+        {
+            no_empty=true;
+            break ;
+        }
+    }
+    if(no_empty)
+    {
+       for (int i = 0; i < 9; i++)
+        {
+            cout<<table[i]<<" ";
+        }
+        cout<<"\nThese are used table. Wait all table are empty "<<endl; 
+        return ;
+    }
     book.clear();
     push_menubook(book);
     cout<<"Menubook is update"<<endl;
     printmenubook(book);
     return;
-
 }
 
 void push_menubook(vector<menubook> &book){
@@ -808,7 +961,7 @@ void push_menubook(vector<menubook> &book){
 
 void printmenubook(vector<menubook> &book)
 {
-    cout<<"---------------------------------------------------------\n\n";
+    cout<<"---------------------------------------------------------\n";
     cout <<setw(10)<<right<<"Food ID"<<"\t"<<setw(15)<<left <<"Food Name"<<setw(10)<<right<<"Price"<<endl;
     for (unsigned int i = 0; i < book.size(); i++)
     {
@@ -819,5 +972,6 @@ void printmenubook(vector<menubook> &book)
     }
     cout<<"---------------------------------------------------------\n";
 }
+
 //gcc sqlite3.c -c   ทำแบบนี้มันจะไม่ได้ exe แต่จะได้เป็น object file ที่ลิงค์เข้ากับโค้ดให้โปรแกรมเราไปเรียกใช้ตอน compile ครับ
 //how to run (safe file first) ; g++ main.cpp sqlite3.o ; ./a.exe
